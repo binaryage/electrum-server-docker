@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" = "" ]; then
+    cat <<EOF
+No command specified. Valid commands include:
+
+  * serve: Run the bitcoind node
+  * rpc: Issue an RPC command
+
+See https://github.com/binaryage/electrum-server-docker for details.
+EOF
+    exit 1
+fi
+
+cd /bitcoind
+
+# expand environment in bitcoind.conf template
+mv bitcoind.conf bitcoind-template.conf
+perl -pe 's/\$(\w+)/$ENV{$1}/g' bitcoind-template.conf > bitcoind.conf
+
+BITCOIND_PREFIX="bitcoind -conf=/bitcoind/bitcoind.conf -datadir=/bitcoind/data"
+
+if [ "$1" == "rpc" ]; then
+    set -x
+    exec $BITCOIND_PREFIX -rpcconnect=$BITCOIND_PORT_8332_TCP_ADDR -rpcport=$BITCOIND_PORT_8332_TCP_PORT ${*:2}
+elif [ "$1" == "serve" ]; then
+    set -x
+    exec $BITCOIND_PREFIX -printtoconsole
+else
+    echo $@ | exec bash
+fi

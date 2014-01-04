@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+cd "$(dirname "$(readlink -f $0)")"/..
+. etc/env
+
+START="\
+  sudo docker run 
+    -v $HOST_BITCOIND_DATA_DIR:/bitcoind/data \
+    -e BITCOIND_EXTERNAL_IP=$HOSTIP \
+    -e BITCOIND_RPC_USER=$BITCOIND_RPC_USER \
+    -e BITCOIND_RPC_PASSWORD=$BITCOIND_RPC_PASSWORD \
+    -e BITCOIND_CONFIG=$BITCOIND_CONFIG \
+    $DOCKER_RUN_OPTS \
+"
+
+if [ "$1" = "serve" ]; then
+    START="$START -d -p $HOST_BITCOIND_PORT:8333 -name $BITCOIND_NODE_CONTAINER_NAME"
+fi
+if [ "$1" = "rpc" ]; then
+    START="$START -d=false -rm -link $BITCOIND_NODE_CONTAINER_NAME:bitcoind -name $BITCOIND_RPC_CONTAINER_NAME"
+fi
+
+set -x
+exec $START binaryage/electrum-bitcoind $@

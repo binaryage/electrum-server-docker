@@ -1,0 +1,35 @@
+# To override the environment variables here, add them to electrum-server-docker/.env
+
+export DOCKER_RUN_OPTS=
+
+# IP address of current host.
+export HOSTIP=$(/sbin/ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}')
+
+export HOST_DATA_DIR_PREFIX="/var/lib/electrum-server-docker"
+export HOST_BITCOIND_DATA_DIR="$HOST_DATA_DIR_PREFIX/bitcoind"
+export HOST_ELECTRUM_DATA_DIR="$HOST_DATA_DIR_PREFIX/electrum/data"
+export HOST_ELECTRUM_LEVELDB_DIR="$HOST_DATA_DIR_PREFIX/electrum/leveldb"
+export HOST_ELECTRUM_CERT_DIR="$HOST_DATA_DIR_PREFIX/electrum/cert"
+export HOST_BITCOIND_PORT=8333
+
+export HOST_ELECTRUM_TCP_PORT=50001
+export HOST_ELECTRUM_HTTP_PORT=8081
+export HOST_ELECTRUM_TCP_SSL_PORT=50002
+export HOST_ELECTRUM_HTTP_SSL_PORT=8082
+
+export ELECTRUM_HOST=localhost
+export ELECTRUM_PASSWORD=
+
+export BITCOIND_RPC_USER=
+export BITCOIND_RPC_PASSWORD=
+export BITCOIND_CONFIG=
+
+export BITCOIND_NODE_CONTAINER_NAME=bitcoind-node
+export BITCOIND_RPC_CONTAINER_NAME=bitcoind-rpc
+export ELECTRUM_SERVER_CONTAINER_NAME=electrum-server
+export ELECTRUM_CONFIG=
+
+# Overrides.
+if [ -e .env ]; then
+    source .env
+fi

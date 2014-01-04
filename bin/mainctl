@@ -1,0 +1,66 @@
+#!/bin/bash
+
+set -e
+cd "$(dirname "$(readlink -f $0)")"/..
+. etc/env
+
+if [ "$1" = "" ] || [ "$1" = "--help" ]; then
+    cat <<EOF
+No command specified. Valid commands include:
+
+  * serve: Run electrum server
+  * setup: First time check
+
+See https://github.com/binaryage/electrum-server-docker for details.
+EOF
+    exit 1
+fi
+
+# ----------------------------------
+
+if [ "$1" = "build" ]; then
+    set -x
+    docker build -rm -t binaryage/electrum-bitcoind bitcoind
+    docker build -rm -t binaryage/electrum-server electrum
+elif [ "$1" == "setup" ]; then
+    set -x
+    mkdir -p "$HOST_BITCOIND_DATA_DIR"
+    mkdir -p "$HOST_ELECTRUM_DATA_DIR"
+    mkdir -p "$HOST_ELECTRUM_LEVELDB_DIR"
+    ./do gencert
+elif [ "$1" == "rm" ]; then
+    set -x
+    docker rm $BITCOIND_NODE_CONTAINER_NAME
+    docker rm $ELECTRUM_SERVER_CONTAINER_NAME
+elif [ "$1" == "run" ]; then
+    set -x
+    bin/bitcoindctl serve
+    sleep 20 # TODO: wait for bitcoind to launch fully
+    bin/electrumctl serve
+elif [ "$1" == "start" ]; then
+    set -x
+    docker start $BITCOIND_NODE_CONTAINER_NAME
+    sleep 20 # TODO: wait for bitcoind to launch fully
+    docker start $ELECTRUM_SERVER_CONTAINER_NAME
+elif [ "$1" == "stop" ]; then
+    set -x
+    docker stop $ELECTRUM_SERVER_CONTAINER_NAME
+    docker stop $BITCOIND_NODE_CONTAINER_NAME
+elif [ "$1" == "gencert" ]; then
+    set -x
+    # see https://github.com/spesmilo/electrum-server/blob/master/HOWTO.md#step-9-create-a-self-signed-ssl-cert
+    mkdir -p "$HOST_ELECTRUM_CERT_DIR"
+    cd "$HOST_ELECTRUM_CERT_DIR"
+    openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
+    openssl rsa -passin pass:x -in server.pass.key -out electrum-server.key
+    rm server.pass.key
+    openssl req -new -key electrum-server.key -out electrum-server.csr
+    openssl x509 -req -days 730 -in electrum-server.csr -signkey electrum-server.key -out electrum-server.crt
+    echo "--------------------"
+    ls -la *
+elif [ "$1" == "rpc" ]; then
+    set -x
+    bin/bitcoindctl $@
+else
+    echo "unknown command, run ./do --help"
+fi

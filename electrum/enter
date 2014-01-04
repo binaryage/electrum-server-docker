@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" = "" ]; then
+    cat <<EOF
+No command specified. Valid commands include:
+
+  * serve: Run electrum server
+
+See https://github.com/binaryage/electrum-server-docker for details.
+EOF
+    exit 1
+fi
+
+cd /electrum
+
+# expand environment in electrum.conf template
+mv electrum.conf electrum.conf.template
+perl -pe 's/\$(\w+)/$ENV{$1}/g' electrum.conf.template > /etc/electrum.conf
+cp electrum.banner /etc/electrum.banner
+
+if [ "$1" == "serve" ]; then
+    set -x
+    electrum-server
+else
+    echo $@ | exec bash
+fi

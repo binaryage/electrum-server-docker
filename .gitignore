@@ -1,0 +1,6 @@
+tmp/*
+.env
+data/bitcoind/*
+data/electrum/data/*
+data/electrum/leveldb/*
+data/electrum/cert/*
